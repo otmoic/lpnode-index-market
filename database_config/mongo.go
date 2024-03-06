@@ -22,8 +22,11 @@ func InitMongoConfig() {
 		prodMongoPass := os.Getenv("MONGODBPASS")
 		prodMongoHost := os.Getenv("OBRIDGE_LPNODE_DB_MONGODB_SERVICE_HOST")
 		prodMongoPort := os.Getenv("OBRIDGE_LPNODE_DB_MONGODB_SERVICE_PORT")
-		url := fmt.Sprintf("mongodb://root:%s@%s:%s/lp_store?authSource=admin", prodMongoPass, prodMongoHost, prodMongoPort)
-		item := MongoDbConnectInfoItem{Url: url, Database: "lp_store"}
+		prodMongoUser := os.Getenv("MONGODB_ACCOUNT")
+		prodMongoDBNameStore := os.Getenv("MONGODB_DBNAME_LP_STORE")
+		url := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?authSource=%s", prodMongoUser, prodMongoPass, prodMongoHost, prodMongoPort, prodMongoDBNameStore, prodMongoDBNameStore)
+		fmt.Println(url)
+		item := MongoDbConnectInfoItem{Url: url, Database: prodMongoDBNameStore}
 		MongoDataBaseConfigIns["main"] = item
 		return
 	}

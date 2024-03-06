@@ -36,7 +36,7 @@ func InitRedisConfig() {
 		RedisDataDataBaseConfigIns["statusDb"] = RedisDbConnectInfoItem{
 			RedisUrl: fmt.Sprintf("%s:%d", prodRedisHost, prodRedisPort),
 			RedisPwd: prodRedisPass,
-			DbIndex:  9,
+			DbIndex:  0,
 		}
 		return
 	}
@@ -49,6 +49,6 @@ func InitRedisConfig() {
 	RedisDataDataBaseConfigIns["statusDb"] = RedisDbConnectInfoItem{
 		RedisUrl: "127.0.0.1:6379",
 		RedisPwd: redisPass,
-		DbIndex:  9,
+		DbIndex:  0,
 	}
 }
