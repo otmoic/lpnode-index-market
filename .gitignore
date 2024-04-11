@@ -4,3 +4,7 @@ state_file
 .idea
 cmd/go_build_lp_market_cmd
 cmd/go_build_otmoic_lpnode_index_market_
+cmd/go_build_otmoic_lpnode_index_market
+.vscode
+.DS_Store
+cmd/.DS_Store

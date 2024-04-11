@@ -11,7 +11,7 @@ import (
 
 func FindOneAndUpdateSession(dbKey string, collName string, filter interface{}, update interface{}) (commit *struct{ Commit func(commit bool) error }, ret *mongo.UpdateResult, err error) {
 	if !IsInit(dbKey) {
-		err = errors.New("数据库未初始化")
+		err = errors.New("database not initialized")
 		return
 	}
 	client := DbList[dbKey].Client

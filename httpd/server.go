@@ -19,12 +19,12 @@ type Httpd struct {
 }
 
 func (httpd *Httpd) Init() {
-	logger.Httpd.Debug("开始启动Http服务")
+	logger.Httpd.Debug("start http service")
 	ctrl := &Ctrl{}
 	ctrl.RegRouter(httpdRouter)
 	port := os.Getenv("SERVICE_PORT")
 	if port == "" {
-		log.Println("无法获得端口的基本配置")
+		log.Println("unable to obtain basic configuration for port")
 		os.Exit(0)
 	}
 
@@ -33,7 +33,6 @@ func (httpd *Httpd) Init() {
 
 var httpdInstance *Httpd
 
-// 单例返回  现货市场实例
 func GetHttpdInstance() *Httpd {
 	once.Do(func() {
 		httpdInstance = &Httpd{}

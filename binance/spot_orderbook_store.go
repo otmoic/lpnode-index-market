@@ -10,7 +10,7 @@ import (
 
 type SpotOrderbookStore struct {
 	// OrderBookList map[string]types.OrderBookItem
-	OrderBookList sync.Map // 放入已经解析好的orderbook
+	OrderBookList sync.Map
 }
 
 var SpotOrderbookStoreInstance stdmarket.StdSpotOrderbook
@@ -23,12 +23,11 @@ func (so *SpotOrderbookStore) GetOrderbook() sync.Map {
 	return so.OrderBookList
 }
 
-// 设置现货Orderbook
 func (so *SpotOrderbookStore) SetSpotOrderbook(streamName string, data *types.OrderBookItem) {
 	symbolInfo := strings.Split(streamName, "@")
 	symbolStdInfo, ok := SpotSymbolList_Global.Load(symbolInfo[0])
 	if !ok {
-		logger.Orderbook.Errorf("没有找到标准的symbol%s", symbolInfo[0])
+		logger.Orderbook.Errorf("unable to find standard symbol%s", symbolInfo[0])
 		return
 	}
 
@@ -45,7 +44,7 @@ func (so *SpotOrderbookStore) SetSpotOrderbook(streamName string, data *types.Or
 
 func GetSpotOrderbookStoreInstance() stdmarket.StdSpotOrderbook {
 	spotOrderbookOnce.Do(func() {
-		logger.SpotMarket.Debug("初始化现货Orderbook🌶")
+		logger.SpotMarket.Debug("initialize spot orderbook 🌶️")
 		SpotOrderbookStoreInstance = &SpotOrderbookStore{
 			OrderBookList: sync.Map{},
 		}

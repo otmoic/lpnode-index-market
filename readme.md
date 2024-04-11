@@ -1,1 +1,0 @@
-# otmoic-lpnode-index-market

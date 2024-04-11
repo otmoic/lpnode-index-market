@@ -20,24 +20,24 @@ type CoinSwapMarketGroupConn struct {
 	symbolList      []types.ExchangeInfoSymbolApiResult
 	webSocketCtx    context.Context
 	webSocketCancel context.CancelFunc
-	orderbookStore  stdmarket.StdCoinSwapOrderbook // u本位合约行情的存储
+	orderbookStore  stdmarket.StdCoinSwapOrderbook
 }
 
 func (csmgc *CoinSwapMarketGroupConn) Init() {
-	logger.CSwapMarket.Debug("初始化u本位合约的orderbook存储")
+	logger.CSwapMarket.Debug("initialize orderbook storage for u-based contract")
 	csmgc.orderbookStore = GetCoinSwapOrderbookStoreInstance()
-	logger.CSwapMarket.Debug("存储的对象是", csmgc.orderbookStore)
+	logger.CSwapMarket.Debug("stored object is", csmgc.orderbookStore)
 }
 
 func (csmgc *CoinSwapMarketGroupConn) SetSymbolList(symbolList []types.ExchangeInfoSymbolApiResult) {
-	csmgc.symbolList = symbolList // 设置币对数据
+	csmgc.symbolList = symbolList // set currency pair data
 }
 
-// Run 开始运行
+// Run start running
 func (csmgc *CoinSwapMarketGroupConn) Run() {
 	go func() {
 		csmgc.Do()
-		logger.CSwapMarket.Debug("[coinSwap]币对Group启动程序已关闭...")
+		logger.CSwapMarket.Debug("[coinSwap]currency pair group startup program has been closed...")
 	}()
 }
 
@@ -72,41 +72,41 @@ func (csmgc *CoinSwapMarketGroupConn) GetSubParams() string {
 		jsonVal, _ = sjson.Set(jsonVal, key, symbolValue)
 	}
 	jsonVal, _ = sjson.Set(jsonVal, "id", csmgc.GetLastMessageId())
-	logger.SpotMarket.Debug("需要订阅的Json信息", jsonVal)
+	logger.SpotMarket.Debug("json information needed for subscription", jsonVal)
 	return jsonVal
 }
 func (csmgc *CoinSwapMarketGroupConn) Do() {
-	logger.Httpd.Debug("开始Do............")
-	// 准备控制句柄
+	logger.Httpd.Debug("start do............")
+	// prepare control handle
 	webSocketCtx, cancelWebSocket := context.WithCancel(context.Background())
 	csmgc.webSocketCtx = webSocketCtx
 	connectUrl := CoinSwapMarketWssBaseUrl + csmgc.GetStreams()
-	logger.SpotMarket.Debug("需要链接的Url是:", connectUrl)
+	logger.SpotMarket.Debug("url needed for linking is:", connectUrl)
 	subParamsStr := csmgc.GetSubParams()
 	csmgc.webSocketCancel = cancelWebSocket
 	config := utils.WebSocketClientConnOption{
 		Url:              connectUrl,
 		NoDataDisconnect: true,
 		NoDataTimeout:    70,
-		SendPingInterval: 0, // 不要主动发送Ping消息出去
+		SendPingInterval: 0, // do not actively send ping messages out
 	}
 
 	webSocket := utils.NewWebSocketClientConn(webSocketCtx, config)
 
 	webSocket.OnMessage = func(message string) {
-		// logger.USwapMarket.Debug("收到了Message", message)
+		// logger.USwapMarket.Debug("received message", message)
 		orderItem := types.CoinSwapOrderBookInMessage{}
 		err := sonic.Unmarshal([]byte(message), &orderItem)
 		if err != nil {
-			logger.USwapMarket.Debug("发生了错误", err)
+			logger.USwapMarket.Debug("an error occurred", err)
 			return
 		}
 		if orderItem.Data.StdStream == "" {
-			logger.USwapMarket.Debug("可能是Ping", message)
+			logger.USwapMarket.Debug("might be a ping", message)
 			return
 		}
 		if orderItem.Data.EventType != "depthUpdate" {
-			logger.USwapMarket.Debug("不是有效的Update")
+			logger.USwapMarket.Debug("not a valid update")
 			return
 		}
 		orderBookItem := &types.OrderBookItem{}
@@ -120,17 +120,17 @@ func (csmgc *CoinSwapMarketGroupConn) Do() {
 		csmgc.orderbookStore.SetOrderbook(orderItem.Stream, orderBookItem)
 	}
 	webSocket.OnReconnect = func(connectCount int64, lastError string) {
-		logger.USwapMarket.Debugf("链接重新建立%s", csmgc.GetSymbolsString())
+		logger.USwapMarket.Debugf("link reestablishment underway%s", csmgc.GetSymbolsString())
 	}
 	webSocket.OnConnect = func(conn *utils.WebSocketClientConn) {
-		log.Println("到币安的链接已经完成", conn.Url, "发送订阅信息", subParamsStr)
+		log.Println("link establishment complete", conn.Url, "subscription information sent", subParamsStr)
 		webSocket.SendTextMessage(subParamsStr)
 	}
 	webSocket.Initialize()
 
 }
 
-// Drop 丢弃这个类,不在处理 ，系统重新分配资源时执行
+// Drop discard this class; do not process; execute when system reallocates resources
 func (csmgc *CoinSwapMarketGroupConn) Drop() {
 	csmgc.webSocketCancel()
 }

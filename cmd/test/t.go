@@ -8,7 +8,7 @@ import (
 
 func te() error {
 	err := "00000"
-	return errors.New(fmt.Errorf("错误:%s", err).Error())
+	return errors.New(fmt.Errorf("err:%s", err).Error())
 }
 func main() {
 	err := te()

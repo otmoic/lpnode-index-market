@@ -25,19 +25,19 @@ type SpotMarketGroupConn struct {
 }
 
 func (smgc *SpotMarketGroupConn) Init() {
-	logger.SpotMarket.Debug("初始化OrderBook的存储..")
+	logger.SpotMarket.Debug("initializing OrderBook storage..")
 	smgc.SpotOrderbookInstance = GetSpotOrderbookStoreInstance()
-	logger.SpotMarket.Debug("存储的对象是", smgc.SpotOrderbookInstance)
+	logger.SpotMarket.Debug("storage object is", smgc.SpotOrderbookInstance)
 }
 func (smgc *SpotMarketGroupConn) SetSymbolList(symbolList []types.ExchangeInfoSymbolApiResult) {
-	smgc.symbolList = symbolList // 设置币对数据
+	smgc.symbolList = symbolList // setting currency pair data
 }
 
-// 开始运行
+// commencing execution
 func (smgc *SpotMarketGroupConn) Run() {
 	go func() {
 		smgc.Do()
-		logger.SpotMarket.Debug("开始处理", smgc.GetSymbolsString())
+		logger.SpotMarket.Debug("beginning processing", smgc.GetSymbolsString())
 	}()
 }
 func (smgc *SpotMarketGroupConn) GetLastMessageId() int64 {
@@ -70,24 +70,24 @@ func (smgc *SpotMarketGroupConn) GetSubParams() string {
 		jsonVal, _ = sjson.Set(jsonVal, key, symbolValue)
 	}
 	jsonVal, _ = sjson.Set(jsonVal, "id", smgc.GetLastMessageId())
-	logger.SpotMarket.Debug("需要订阅的Json信息", jsonVal)
+	logger.SpotMarket.Debug("JSON information required for subscription", jsonVal)
 	return jsonVal
 }
 func (smgc *SpotMarketGroupConn) Do() {
-	logger.Httpd.Debug("开始Do............")
-	// 准备控制句柄
+	logger.Httpd.Debug("stat do ............")
+	// preparing control handle
 	webSocketCtx, cancelWebSocket := context.WithCancel(context.Background())
 	smgc.webSocketCtx = webSocketCtx
 	connectUrl := SpotMarketWssBaseUrl + smgc.GetStream()
-	logger.SpotMarket.Debug("需要链接的Url是:", connectUrl)
-	logger.SpotMarket.Debug("当前处理的币对列表是", smgc.GetSymbolsString())
+	logger.SpotMarket.Debug("URL to connect is:", connectUrl)
+	logger.SpotMarket.Debug("current list of currency pairs being processed is", smgc.GetSymbolsString())
 	subParamsStr := smgc.GetSubParams()
 	smgc.webSocketCancel = cancelWebSocket
 	config := utils.WebSocketClientConnOption{
 		Url:              connectUrl,
 		NoDataDisconnect: true,
 		NoDataTimeout:    10,
-		SendPingInterval: 0, // 不要主动发送Ping消息出去
+		SendPingInterval: 0, // do not actively send Ping messages
 	}
 
 	webSocket := utils.NewWebSocketClientConn(webSocketCtx, config)
@@ -97,11 +97,11 @@ func (smgc *SpotMarketGroupConn) Do() {
 		orderItem := types.SpotOrderBookInMessage{}
 		err := sonic.Unmarshal([]byte(message), &orderItem)
 		if err != nil {
-			logger.SpotMarket.Debug("发生了错误", err)
+			logger.SpotMarket.Debug("an error occurred", err)
 			return
 		}
 		if orderItem.Stream == "" {
-			logger.SpotMarket.Debug("可能是Ping", message)
+			logger.SpotMarket.Debug("possibly due to Ping", message)
 			return
 		}
 		orderBookItem := &types.OrderBookItem{}
@@ -115,17 +115,17 @@ func (smgc *SpotMarketGroupConn) Do() {
 		smgc.SpotOrderbookInstance.SetSpotOrderbook(orderItem.Stream, orderBookItem)
 	}
 	webSocket.OnReconnect = func(connectCount int64, lastError string) {
-		logger.SpotMarket.Debugf("链接重新建立%s", smgc.GetSymbolsString())
+		logger.SpotMarket.Debugf("re-establishing link %s", smgc.GetSymbolsString())
 	}
 	webSocket.OnConnect = func(conn *utils.WebSocketClientConn) {
-		log.Println("到币安的链接已经完成", conn.Url, "发送订阅信息", subParamsStr)
+		log.Println("link has been completed", conn.Url, "send sub", subParamsStr)
 		webSocket.SendTextMessage(subParamsStr)
 	}
 	webSocket.Initialize()
 
 }
 
-// 丢弃这个类,不在处理 ，系统重新分配资源时执行
+// discard this class, cease handling; execute when system reallocates resources
 func (smgc *SpotMarketGroupConn) Drop() {
 	smgc.webSocketCancel()
 }

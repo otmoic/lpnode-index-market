@@ -13,10 +13,8 @@ type RedisDb struct {
 	PoolPtr *redis.Pool
 }
 
-// RedisDbList 全局存储的所有redis链接列表
 var RedisDbList map[string]*RedisDb = make(map[string]*RedisDb)
 
-// 能够通过Key获取多个不同的Redisdb 实例
 func GetRedisDbIns(key string) *RedisDb {
 	redisDbIns, ok := RedisDbList[key]
 	if ok {
@@ -27,15 +25,14 @@ func GetRedisDbIns(key string) *RedisDb {
 	return redisDbIns
 }
 
-// 创建一个Redis的实例
 func NewRedis(key string) *RedisDb {
 	redisDb := &RedisDb{}
 	redisConf, ok := database_config.RedisDataDataBaseConfigIns[key]
 	if !ok {
-		log.Printf("获取系统基础配置出错 RedisKey:%s", key)
+		log.Printf("error retrieving system base configuration RedisKey:%s", key)
 		os.Exit(0)
 	}
-	log.Println("链接", redisConf)
+	log.Println("link", redisConf)
 	redisDb.PoolPtr = &redis.Pool{
 		MaxActive:   300,
 		MaxIdle:     30,
@@ -48,7 +45,7 @@ func NewRedis(key string) *RedisDb {
 			return conn, e
 		},
 	}
-	log.Println("链接已经结束", redisConf)
+	log.Println("link has ended", redisConf)
 	return redisDb
 }
 
@@ -130,7 +127,7 @@ func (redisDb *RedisDb) RPush(key string, value string) (int64, error) {
 
 		}
 	}(conn)
-	conn.Do("LTRIM", key, 0, 10000) // @todo 临时限制队列的最大大小为10000条，否则可能撑爆
+	conn.Do("LTRIM", key, 0, 10000)
 	reply, err := conn.Do("RPUSH", key, value)
 	if err == nil {
 

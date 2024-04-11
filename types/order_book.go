@@ -2,20 +2,20 @@ package types
 
 type BidOrAsk []string
 
-// orderbook 类型
+// orderbook type
 type OrderBookItem struct {
 	StdSymbol         string     `json:"stdSymbol"`
 	Symbol            string     `json:"symbol"`
 	LastUpdateId      int64      `json:"lastUpdateId"`
-	Timestamp         int64      `json:"timestamp"`         // spot 为存储时间 swap 为推送时间
-	IncomingTimestamp int64      `json:"incomingTimestamp"` // 保存的时间
+	Timestamp         int64      `json:"timestamp"`         // spot is storage time swap is push time
+	IncomingTimestamp int64      `json:"incomingTimestamp"` // saved time
 	StreamName        string     `json:"stream"`
 	Bids              []BidOrAsk `json:"bids"`
 	Asks              []BidOrAsk `json:"asks"`
 }
 type StdSymbolInfo struct {
 	Symbol     string `json:"symbol"`
-	StdSymbol  string // 用于存储格式化之后的币对名称
+	StdSymbol  string // used for storing formatted currency pair names
 	BaseAsset  string `json:"baseAsset"`
 	QuoteAsset string `json:"quoteAsset"`
 }

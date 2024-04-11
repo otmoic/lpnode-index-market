@@ -20,23 +20,22 @@ type UsdtSwapMarketGroupConn struct {
 	symbolList      []types.ExchangeInfoSymbolApiResult
 	webSocketCtx    context.Context
 	webSocketCancel context.CancelFunc
-	orderbookStore  stdmarket.StdUsdtSwapOrderbook // u本位合约行情的存储
+	orderbookStore  stdmarket.StdUsdtSwapOrderbook
 }
 
 func (usmgc *UsdtSwapMarketGroupConn) Init() {
-	logger.USwapMarket.Debug("初始化u本位合约的orderbook存储")
+	logger.USwapMarket.Debug("initialize orderbook storage for u-based contracts")
 	usmgc.orderbookStore = GetUsdtSwapOrderbookStoreInstance()
-	logger.USwapMarket.Debug("存储的对象是", usmgc.orderbookStore)
+	logger.USwapMarket.Debug("storage object is", usmgc.orderbookStore)
 }
 func (usmgc *UsdtSwapMarketGroupConn) SetSymbolList(symbolList []types.ExchangeInfoSymbolApiResult) {
-	usmgc.symbolList = symbolList // 设置币对数据
+	usmgc.symbolList = symbolList // set pairs data
 }
 
-// 开始运行
 func (usmgc *UsdtSwapMarketGroupConn) Run() {
 	go func() {
 		usmgc.Do()
-		logger.USwapMarket.Debug("[uswap]币对Group启动程序已关闭...")
+		logger.USwapMarket.Debug("[uswap] currency pair group startup program has closed...")
 	}()
 }
 func (usmgc *UsdtSwapMarketGroupConn) GetLastMessageId() int64 {
@@ -69,23 +68,21 @@ func (usmgc *UsdtSwapMarketGroupConn) GetSubParams() string {
 		jsonVal, _ = sjson.Set(jsonVal, key, symbolValue)
 	}
 	jsonVal, _ = sjson.Set(jsonVal, "id", usmgc.GetLastMessageId())
-	logger.SpotMarket.Debug("需要订阅的Json信息", jsonVal)
+	logger.SpotMarket.Debug("JSON information required for subscription", jsonVal)
 	return jsonVal
 }
 func (usmgc *UsdtSwapMarketGroupConn) Do() {
-	logger.Httpd.Debug("开始Do............")
-	// 准备控制句柄
 	webSocketCtx, cancelWebSocket := context.WithCancel(context.Background())
 	usmgc.webSocketCtx = webSocketCtx
 	connectUrl := UsdtSwapMarketWssBaseUrl
-	logger.SpotMarket.Debug("需要链接的Url是:", connectUrl)
+	logger.SpotMarket.Debug("URL to connect is:", connectUrl)
 	subParamsStr := usmgc.GetSubParams()
 	usmgc.webSocketCancel = cancelWebSocket
 	config := utils.WebSocketClientConnOption{
 		Url:              connectUrl,
 		NoDataDisconnect: true,
 		NoDataTimeout:    70,
-		SendPingInterval: 0, // 不要主动发送Ping消息出去
+		SendPingInterval: 0,
 	}
 
 	webSocket := utils.NewWebSocketClientConn(webSocketCtx, config)
@@ -94,15 +91,15 @@ func (usmgc *UsdtSwapMarketGroupConn) Do() {
 		orderItem := types.UsdtSwapOrderBookInMessage{}
 		err := sonic.Unmarshal([]byte(message), &orderItem)
 		if err != nil {
-			logger.USwapMarket.Debug("发生了错误", err)
+			logger.USwapMarket.Debug("an error occurred", err)
 			return
 		}
 		if orderItem.Stream == "" {
-			logger.USwapMarket.Debug("可能是Ping", message)
+			logger.USwapMarket.Debug("possibly a Ping", message)
 			return
 		}
 		if orderItem.EventType != "depthUpdate" {
-			logger.USwapMarket.Debug("不是有效的Update")
+			logger.USwapMarket.Debug("not a valid Update")
 			return
 		}
 		orderBookItem := &types.OrderBookItem{}
@@ -116,17 +113,16 @@ func (usmgc *UsdtSwapMarketGroupConn) Do() {
 		usmgc.orderbookStore.SetOrderbook(orderItem.Stream, orderBookItem)
 	}
 	webSocket.OnReconnect = func(connectCount int64, lastError string) {
-		logger.USwapMarket.Debugf("链接重新建立%s", usmgc.GetSymbolsString())
+		logger.USwapMarket.Debugf("link reestablished %s", usmgc.GetSymbolsString())
 	}
 	webSocket.OnConnect = func(conn *utils.WebSocketClientConn) {
-		log.Println("到币安的链接已经完成", conn.Url, "发送订阅信息", subParamsStr)
+		log.Println("connection to Binance established", conn.Url, "sending subscription information", subParamsStr)
 		webSocket.SendTextMessage(subParamsStr)
 	}
 	webSocket.Initialize()
-
 }
 
-// 丢弃这个类,不在处理 ，系统重新分配资源时执行
+// discard this class, cease handling; execute when system reallocates resources
 func (usmgc *UsdtSwapMarketGroupConn) Drop() {
 	usmgc.webSocketCancel()
 }

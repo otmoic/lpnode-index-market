@@ -20,18 +20,17 @@ func (sd *StateDb) Init(ctx context.Context) error {
 		return err
 	}
 	sd.db = db
-	logger.StateDb.Debug("开始初始化数据库...")
+	logger.StateDb.Debug("initializing database...")
 	select {
-	case <-ctx.Done(): // 监听启动器的退出 和cancel
+	case <-ctx.Done():
 		db.Close()
-		logger.SpotMarket.Debug("....... 关闭db并退出")
+		logger.SpotMarket.Debug("....... closing db and exiting")
 	}
 	return nil
 }
 
 var stateDbInstance *StateDb
 
-// 单例返回  现货市场实例
 func GetStateDbInstance() *StateDb {
 	once.Do(func() {
 		stateDbInstance = &StateDb{}

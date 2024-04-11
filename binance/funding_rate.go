@@ -23,8 +23,8 @@ func (fr *FundingRate) Init(ctx context.Context) error {
 	fr.SyncUsdt()
 	fr.SyncCoin()
 
-	<-ctx.Done() // 监听启动器的退出 和cancel
-	logger.SpotMarket.Debug(".......Spot Market Manager.协程退出")
+	<-ctx.Done()
+	logger.SpotMarket.Debug(".......Spot Market Manager.goroutine exit")
 	return nil
 }
 func (fr *FundingRate) GetUsdtFundingRateList() sync.Map {
@@ -50,15 +50,15 @@ func (fr *FundingRate) GetCoinFundingRate(stdSymbol string) *types.StdFundingRat
 func (fr *FundingRate) SyncUsdt() error {
 	sync := func() error {
 		url := fmt.Sprintf("%s%s", UsdtSwapMarketHttpsBaseUrl, UsdtSwapFundingRate)
-		logger.FundingRate.Debugf("开始请求%s", url)
+		logger.FundingRate.Debugf("initiating request%s", url)
 		_, body, errs := gorequest.New().Get(url).End()
 		if len(errs) > 0 {
-			return errors.New(fmt.Errorf("请求发生了错误:%s", errs[0]).Error())
+			return errors.New(fmt.Errorf("request encountered an error :%s", errs[0]).Error())
 		}
 		var ret types.BinanceUsdtSwapFundingRateApiResult
 		err := sonic.Unmarshal([]byte(body), &ret)
 		if err != nil {
-			return errors.New(fmt.Errorf("解码发生了错误:%s", err).Error())
+			return errors.New(fmt.Errorf("decoding encountered an error:%s", err).Error())
 		}
 		fr.SaveUsdtFundingRate(ret)
 		return nil
@@ -67,7 +67,7 @@ func (fr *FundingRate) SyncUsdt() error {
 		for {
 			err := sync()
 			if err != nil {
-				logger.FundingRate.Error("处理资金费率发生错误:%s", err.Error())
+				logger.FundingRate.Error("error processing funding rates:%s", err.Error())
 			}
 			time.Sleep(time.Second * time.Duration(UsdtSwapFundingRateUpdateInterval))
 		}
@@ -77,24 +77,24 @@ func (fr *FundingRate) SyncUsdt() error {
 func (fr *FundingRate) SyncCoin() error {
 	sync := func() error {
 		url := fmt.Sprintf("%s%s", CoinSwapMarketHttpsBaseUrl, CoinSwapFundingRatePath)
-		logger.FundingRate.Debugf("开始请求%s", url)
+		logger.FundingRate.Debugf("starting request to %s", url)
 		_, body, errs := gorequest.New().Get(url).End()
 		if len(errs) > 0 {
-			return errors.New(fmt.Errorf("请求发生了错误:%s", errs[0]).Error())
+			return errors.New(fmt.Errorf("an error occurred during request: %s", errs[0]).Error())
 		}
 		var ret []types.BinanceCoinSwapFundingRate
 		err := sonic.Unmarshal([]byte(body), &ret)
 		if err != nil {
-			return errors.New(fmt.Errorf("解码发生了错误:%s", err).Error())
+			return errors.New(fmt.Errorf("an error occurred during decoding: %s", err).Error())
 		}
 		fr.SaveCoinFundingRate(ret)
 		return nil
 	}
+
 	go func() error {
 		for {
-			err := sync()
-			if err != nil {
-				logger.FundingRate.Error("处理资金费率发生错误:%s", err.Error())
+			if err := sync(); err != nil {
+				logger.FundingRate.Errorf("error processing funding rates: %s", err.Error())
 			}
 			time.Sleep(time.Second * time.Duration(CoinSwapFundingRateUpdateInterval))
 		}
@@ -105,7 +105,7 @@ func (fr *FundingRate) SaveUsdtFundingRate(ret []types.BinanceUsdtSwapFundingRat
 	for _, item := range ret {
 		stdSymbol := GetUSwapMarketInstance().GetStdSymbol(item.Symbol)
 		if stdSymbol == "" {
-			// logger.FundingRate.Warnf("没有找到对应的标准设置:%s", item.Symbol)
+			// logger.FundingRate.Warnf("unable to find corresponding standard settings :%s", item.Symbol)
 			continue
 		}
 		fr.usdtSwapFundingRate.Store(stdSymbol, &types.StdFundingRate{
@@ -119,7 +119,7 @@ func (fr *FundingRate) SaveCoinFundingRate(ret []types.BinanceCoinSwapFundingRat
 	for _, item := range ret {
 		stdSymbol := GetCoinSwapMarketInstance().GetStdSymbol(item.Pair)
 		if stdSymbol == "" {
-			//logger.FundingRate.Warnf("没有找到对应的标准设置:%s", item.Symbol)
+			//logger.FundingRate.Warnf("unable to find corresponding standard settings :%s", item.Symbol)
 			continue
 		}
 		fr.coinSwapFundingRate.Store(stdSymbol, &types.StdFundingRate{

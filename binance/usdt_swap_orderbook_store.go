@@ -25,10 +25,10 @@ func (usos *UsdtSwapOrderbookStore) GetOrderbook() sync.Map {
 
 func (usos *UsdtSwapOrderbookStore) SetOrderbook(streamName string, data *types.OrderBookItem) {
 	streamName = strings.ToLower(streamName)
-	symbolInfo := strings.Split(streamName, "@") // u in message streamName 是大写，要转小写
+	symbolInfo := strings.Split(streamName, "@")
 	symbolStdInfo, ok := UsdtSwapSymbolList_Global.Load(symbolInfo[0])
 	if !ok {
-		logger.Orderbook.Errorf("[UsdtSwap]没有找到标准的symbol%s", symbolInfo[0])
+		logger.Orderbook.Errorf("[UsdtSwap]unable to find standard symbol%s", symbolInfo[0])
 		return
 	}
 
@@ -37,15 +37,15 @@ func (usos *UsdtSwapOrderbookStore) SetOrderbook(streamName string, data *types.
 	data.Symbol = symbolStdInfoStruct.Symbol
 
 	usos.OrderBookList.Store(symbolStdInfoStruct.StdSymbol, data)
-	if !ShowUSwapOrderbookInfo { // 如果不打印消息则退出
+	if !ShowUSwapOrderbookInfo {
 		return
 	}
-	logger.Orderbook.Debug("【🟦🟦🟦🟦🟦🟦】", symbolStdInfoStruct.StdSymbol, data)
+	logger.Orderbook.Debug("【🟦】", symbolStdInfoStruct.StdSymbol, data)
 }
 
 func GetUsdtSwapOrderbookStoreInstance() stdmarket.StdUsdtSwapOrderbook {
 	usdtSwapOrderbookOnce.Do(func() {
-		logger.SpotMarket.Debug("初始化U本位合约Orderbook存储🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶🌶")
+		logger.SpotMarket.Debug("initialize U-based contract orderbook storage 🌶️")
 		UsdtSwapOrderbookStoreInstance = &UsdtSwapOrderbookStore{
 			OrderBookList: sync.Map{},
 		}

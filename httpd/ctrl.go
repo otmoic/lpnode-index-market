@@ -20,44 +20,40 @@ func (h *Ctrl) Init() {
 	marketCenter = &market.MarketCenter{}
 }
 
-// ResetSpot 重置现货的订阅
 func (h *Ctrl) ResetSpot(c *routing.Context) error {
-	logger.Httpd.Debug(`重置现货...Orderbook链接`)
-	marketCenter.GetSpotIns().RefreshMarket() // 重新刷新现货币对列表
+	logger.Httpd.Debug(`reset spot...Orderbook`)
+	marketCenter.GetSpotIns().RefreshMarket()
 	return nil
 }
 
-// ResetUsdtSwap 重置u本位的订阅
 func (h *Ctrl) ResetUsdtSwap(c *routing.Context) error {
-	logger.Httpd.Debug(`重置Usdt Swap...Orderbook链接`)
-	marketCenter.GetUsdtSwapIns().RefreshMarket() // 重新刷新u本位订阅的链接
+	logger.Httpd.Debug(`reset Usdt Swap...Orderbook`)
+	marketCenter.GetUsdtSwapIns().RefreshMarket()
 	return nil
 }
 
-// ResetCoinSwap 重置币本位的订阅
 func (h *Ctrl) ResetCoinSwap(c *routing.Context) error {
-	logger.Httpd.Debug(`重置Coin Swap...Orderbook链接`)
-	marketCenter.GetCoinSwapIns().RefreshMarket() // 重新刷新币本位订阅的链接
+	logger.Httpd.Debug(`reset Coin Swap...Orderbook`)
+	marketCenter.GetCoinSwapIns().RefreshMarket()
 	return nil
 }
 
-// SetSportSymbols 设置现货的可用币对
 func (h *Ctrl) SetSpotSymbols(c *routing.Context) error {
-	logger.Httpd.Debug("开始设置Symbol列表")
+	logger.Httpd.Debug("set Symbol list")
 	body := c.Request.Body()
 	var dataArr []string = []string{}
 	sonic.Unmarshal(body, &dataArr)
 	marketCenter.GetSpotIns().SetUsedSymbol(dataArr)
-	marketCenter.GetSpotIns().RefreshMarket() // 重新刷新现货币对列表
+	marketCenter.GetSpotIns().RefreshMarket()
 	return nil
 }
 func (h *Ctrl) SetUsdtSwapSymbols(c *routing.Context) error {
-	logger.Httpd.Debug("开始设置Symbol列表")
+	logger.Httpd.Debug("set Symbol list")
 	body := c.Request.Body()
 	var dataArr []string = []string{}
 	sonic.Unmarshal(body, &dataArr)
 	marketCenter.GetUsdtSwapIns().SetUsedSymbol(dataArr)
-	marketCenter.GetUsdtSwapIns().RefreshMarket() // 重新刷新现货币对列表
+	marketCenter.GetUsdtSwapIns().RefreshMarket()
 	return nil
 }
 func (h *Ctrl) GetUsdtSwapFundingRate(c *routing.Context) error {
@@ -67,7 +63,7 @@ func (h *Ctrl) GetUsdtSwapFundingRate(c *routing.Context) error {
 	retFundingRate.Data = marketCenter.GetFundingRateIns().GetUsdtFundingRate(symbol)
 	apiJsonStr, err := sonic.Marshal(retFundingRate)
 	if err != nil {
-		logger.Httpd.Errorf("处理数据发生了错误%s", err)
+		logger.Httpd.Errorf("error processing data %s", err)
 	}
 	fmt.Fprintln(c, string(apiJsonStr))
 	return nil
@@ -79,23 +75,22 @@ func (h *Ctrl) GetCoinSwapFundingRate(c *routing.Context) error {
 	retFundingRate.Data = marketCenter.GetFundingRateIns().GetCoinFundingRate(symbol)
 	apiJsonStr, err := sonic.Marshal(retFundingRate)
 	if err != nil {
-		logger.Httpd.Errorf("处理数据发生了错误%s", err)
+		logger.Httpd.Errorf("error processing data %s", err)
 	}
 	fmt.Fprintln(c, string(apiJsonStr))
 	return nil
 }
 
 func (h *Ctrl) SetCoinSwapSymbols(c *routing.Context) error {
-	logger.Httpd.Debug("开始设置Symbol列表")
+	logger.Httpd.Debug("nitializing Symbol List Setup")
 	body := c.Request.Body()
 	var dataArr []string = []string{}
 	sonic.Unmarshal(body, &dataArr)
 	marketCenter.GetCoinSwapIns().SetUsedSymbol(dataArr)
-	marketCenter.GetCoinSwapIns().RefreshMarket() // 重新刷新现货币对列表
+	marketCenter.GetCoinSwapIns().RefreshMarket()
 	return nil
 }
 
-// 返回现货Orderbook的数据
 func (h *Ctrl) GetSpotOrderbookApiData(c *routing.Context) error {
 	orderbook := marketCenter.GetSpotOrderbookIns().GetOrderbook()
 	ret := &types.RetOrderbookMessage{
@@ -108,7 +103,7 @@ func (h *Ctrl) GetSpotOrderbookApiData(c *routing.Context) error {
 	})
 	apiJsonStr, err := sonic.Marshal(ret)
 	if err != nil {
-		logger.Httpd.Errorf("处理数据发生了错误%s", err)
+		logger.Httpd.Errorf("An error occurred while processing the data %s", err)
 	}
 	fmt.Fprintln(c, string(apiJsonStr))
 	return nil
@@ -125,7 +120,7 @@ func (h *Ctrl) GetUsdtSwapOrderbookApiData(c *routing.Context) error {
 	})
 	apiJsonStr, err := sonic.Marshal(ret)
 	if err != nil {
-		logger.Httpd.Errorf("处理数据发生了错误%s", err)
+		logger.Httpd.Errorf("An error occurred while processing the data %s", err)
 	}
 	fmt.Fprintln(c, string(apiJsonStr))
 	return nil
@@ -142,7 +137,7 @@ func (h *Ctrl) GetCoinSwapOrderbookApiData(c *routing.Context) error {
 	})
 	apiJsonStr, err := sonic.Marshal(ret)
 	if err != nil {
-		logger.Httpd.Errorf("处理数据发生了错误%s", err)
+		logger.Httpd.Errorf("An error occurred while processing the data %s", err)
 	}
 	fmt.Fprintln(c, string(apiJsonStr))
 	return nil
@@ -156,11 +151,11 @@ func (h *Ctrl) GetSpotOrderbook(c *routing.Context) error {
 		usedSymbolVal := value.(types.ExchangeInfoSymbolApiResult)
 		item, ok := orderbook.Load(usedSymbolVal.StdSymbol)
 		if !ok {
-			fmt.Fprintln(c, "币对 无行情Symbol", usedSymbolVal.StdSymbol)
+			fmt.Fprintln(c, "currency pair with no market data Symbol", usedSymbolVal.StdSymbol)
 			return true
 		}
 		v := item.(*types.OrderBookItem)
-		lineInfo := fmt.Sprintf("币对 【%s】,Asks0 Price %s Ask0 Amount %s  Bids0 Price %s Bids0 Amount %s", v.StdSymbol, v.Asks[0][0], v.Asks[0][1], v.Bids[0][0], v.Bids[0][1])
+		lineInfo := fmt.Sprintf("pair 【%s】,Asks0 Price %s Ask0 Amount %s  Bids0 Price %s Bids0 Amount %s", v.StdSymbol, v.Asks[0][0], v.Asks[0][1], v.Bids[0][0], v.Bids[0][1])
 		fmt.Fprintln(c, lineInfo)
 		return true
 	})
@@ -175,11 +170,11 @@ func (h *Ctrl) GetUsdtSwapOrderbook(c *routing.Context) error {
 		usedSymbolVal := value.(types.ExchangeInfoSymbolApiResult)
 		item, ok := orderbook.Load(usedSymbolVal.StdSymbol)
 		if !ok {
-			fmt.Fprintln(c, "币对 无行情Symbol", usedSymbolVal.StdSymbol)
+			fmt.Fprintln(c, "currency pair with no market data Symbol", usedSymbolVal.StdSymbol)
 			return true
 		}
 		v := item.(*types.OrderBookItem)
-		lineInfo := fmt.Sprintf("币对 【%s】,Asks0 Price %s Ask0 Amount %s  Bids0 Price %s Bids0 Amount %s", v.StdSymbol, v.Asks[0][0], v.Asks[0][1], v.Bids[0][0], v.Bids[0][1])
+		lineInfo := fmt.Sprintf("symbol 【%s】,Asks0 Price %s Ask0 Amount %s  Bids0 Price %s Bids0 Amount %s", v.StdSymbol, v.Asks[0][0], v.Asks[0][1], v.Bids[0][0], v.Bids[0][1])
 		fmt.Fprintln(c, lineInfo)
 		return true
 	})
@@ -193,11 +188,11 @@ func (h *Ctrl) GetCoinSwapOrderbook(c *routing.Context) error {
 		usedSymbolVal := value.(types.ExchangeInfoSymbolApiResult)
 		item, ok := orderbook.Load(usedSymbolVal.StdSymbol)
 		if !ok {
-			fmt.Fprintln(c, "币对 无行情Symbol", usedSymbolVal.StdSymbol)
+			fmt.Fprintln(c, "currency pair with no market data Symbol", usedSymbolVal.StdSymbol)
 			return true
 		}
 		v := item.(*types.OrderBookItem)
-		lineInfo := fmt.Sprintf("币对 【%s】,Asks0 Price %s Ask0 Amount %s  Bids0 Price %s Bids0 Amount %s", v.StdSymbol, v.Asks[0][0], v.Asks[0][1], v.Bids[0][0], v.Bids[0][1])
+		lineInfo := fmt.Sprintf("pair 【%s】,Asks0 Price %s Ask0 Amount %s  Bids0 Price %s Bids0 Amount %s", v.StdSymbol, v.Asks[0][0], v.Asks[0][1], v.Bids[0][0], v.Bids[0][1])
 		fmt.Fprintln(c, lineInfo)
 		return true
 	})
@@ -205,7 +200,6 @@ func (h *Ctrl) GetCoinSwapOrderbook(c *routing.Context) error {
 }
 
 func (h *Ctrl) RegRouter(r *routing.Router) {
-	// 重新订阅目前内存中的币对列表
 	r.Get("/resetSpotSymbolList", func(c *routing.Context) error {
 		return h.ResetSpot(c)
 	})
@@ -215,7 +209,7 @@ func (h *Ctrl) RegRouter(r *routing.Router) {
 	r.Get("/resetCoinSwapSymbolList", func(c *routing.Context) error {
 		return h.ResetCoinSwap(c)
 	})
-	// 设置币对列表的相关接口
+
 	r.Post("/setSpotSymbolList", func(c *routing.Context) error {
 		return h.SetSpotSymbols(c)
 	})
@@ -226,7 +220,7 @@ func (h *Ctrl) RegRouter(r *routing.Router) {
 		return h.SetCoinSwapSymbols(c)
 	})
 
-	// api orderbook部分
+	// api orderbook
 	r.Get("/api/spotOrderbook", func(c *routing.Context) error {
 		return h.GetSpotOrderbookApiData(c)
 	})
@@ -237,7 +231,7 @@ func (h *Ctrl) RegRouter(r *routing.Router) {
 		return h.GetCoinSwapOrderbookApiData(c)
 	})
 
-	// view orderbook部分
+	// view orderbook
 	r.Get("/spotOrderbook", func(c *routing.Context) error {
 		return h.GetSpotOrderbook(c)
 	})
@@ -247,7 +241,7 @@ func (h *Ctrl) RegRouter(r *routing.Router) {
 	r.Get("/coinSwapOrderbook", func(c *routing.Context) error {
 		return h.GetCoinSwapOrderbook(c)
 	})
-	// 资金费率接口
+
 	r.Get("/getUsdtSwapFundingRate", func(c *routing.Context) error {
 		return h.GetUsdtSwapFundingRate(c)
 	})

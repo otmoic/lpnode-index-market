@@ -18,7 +18,7 @@ var MongoDataBaseConfigIns = make(map[string]MongoDbConnectInfoItem)
 func InitMongoConfig() {
 	prodMongoHost := os.Getenv("OBRIDGE_LPNODE_DB_MONGODB_SERVICE_HOST")
 	if prodMongoHost != "" {
-		log.Println("使用环境变量中的Mongodb配置")
+		log.Println("using Mongodb configuration from environment variables")
 		prodMongoPass := os.Getenv("MONGODBPASS")
 		prodMongoHost := os.Getenv("OBRIDGE_LPNODE_DB_MONGODB_SERVICE_HOST")
 		prodMongoPort := os.Getenv("OBRIDGE_LPNODE_DB_MONGODB_SERVICE_PORT")

@@ -49,7 +49,7 @@ func (sr *StatusReport) UpdateStatus() {
 					orderbook := orderbookItem.(*types.OrderBookItem)
 					lastUpdate = orderbook.Timestamp
 				}
-				sr.StoreData.SpotMarketSymbols = append(sr.StoreData.SpotMarketSymbols, fmt.Sprintf("%s 最后更新时间:%d", v.StdSymbol, lastUpdate))
+				sr.StoreData.SpotMarketSymbols = append(sr.StoreData.SpotMarketSymbols, fmt.Sprintf("%s last update time:%d", v.StdSymbol, lastUpdate))
 				return true
 			})
 			time.Sleep(time.Second * 10)
@@ -65,17 +65,17 @@ func (sr *StatusReport) IntervalReport() {
 func (sr *StatusReport) Save() {
 	statusKey := os.Getenv("STATUS_KEY")
 	if statusKey == "" {
-		log.Println("没有找到statusKey")
+		log.Println("can't not found statusKey")
 		return
 	}
 	bodyByte, err := json.Marshal(sr.StoreData)
 	if err != nil {
-		log.Println("Json序列化出现了问题", err.Error())
+		log.Println("Json Marshal error:", err.Error())
 		return
 	}
-	log.Println("写入Status状态.....")
+	log.Println("writing status")
 	_, writeErr := redis_database.GetStatusDb().Set(statusKey, string(bodyByte))
 	if writeErr != nil {
-		log.Println("写入Status 状态发生了错误", err)
+		log.Println("an error occurred while writing status", err)
 	}
 }

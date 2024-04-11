@@ -24,10 +24,10 @@ func (csos *CoinSwapOrderbookStore) GetOrderbook() sync.Map {
 
 func (csos *CoinSwapOrderbookStore) SetOrderbook(streamName string, data *types.OrderBookItem) {
 	streamName = strings.ToLower(streamName)
-	symbolInfo := strings.Split(streamName, "@") // u in message streamName 是大写，要转小写
+	symbolInfo := strings.Split(streamName, "@") // the letter 'u' in message streamName should be converted to lowercase
 	symbolStdInfo, ok := CoinSwapSymbolList_Global.Load(symbolInfo[0])
 	if !ok {
-		logger.Orderbook.Errorf("[CoinSwap]没有找到标准的symbol:【%s】", symbolInfo[0])
+		logger.Orderbook.Errorf("[CoinSwap] unable to find standard symbol: 【%s】", symbolInfo[0])
 		return
 	}
 
@@ -44,7 +44,7 @@ func (csos *CoinSwapOrderbookStore) SetOrderbook(streamName string, data *types.
 
 func GetCoinSwapOrderbookStoreInstance() stdmarket.StdCoinSwapOrderbook {
 	coinSwapOrderbookOnce.Do(func() {
-		logger.SpotMarket.Debug("初始化币本位合约Orderbook存储🌶")
+		logger.SpotMarket.Debug("initializing coin-margined contract orderbook storage 🌶️")
 		CoinSwapOrderbookStoreInstance = &CoinSwapOrderbookStore{
 			OrderBookList: sync.Map{},
 		}

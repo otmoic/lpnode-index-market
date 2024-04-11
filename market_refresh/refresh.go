@@ -25,14 +25,14 @@ func RefreshSpot() {
 	for {
 		select {
 		case v := <-redisbus.GetRedisBus().EventList:
-			logger.MainMessage.Warn("需要处理的值", v)
+			logger.MainMessage.Warn("value to be processed", v)
 			if v != nil {
 				eventName := gjson.Get(v.Str, "type")
-				logger.MainMessage.Warn("需要处理的eventName:", eventName)
+				logger.MainMessage.Warn("	eventName to be handled:", eventName)
 			}
 			err := DoRefreshSpot()
 			if err != nil {
-				logger.MainMessage.Error("刷新现货市场发生了错误", err)
+				logger.MainMessage.Error("an error occurred while refreshing the spot market", err)
 			}
 			time.Sleep(time.Second * 10)
 		}
@@ -52,14 +52,14 @@ func DoRefreshSpot() (err error) {
 	}
 	err, chainCursor := database.FindAll("main", "chainList", bson.M{})
 	if err != nil {
-		err = errors.WithMessage(err, "从数据库中加载链的原生币对发生了错误")
+		err = errors.WithMessage(err, "an error occurred while loading native currency pairs for chains from the database")
 		return
 	}
 	var chainResults []struct {
 		TokenName string `bson:"tokenName"`
 	}
 	if err = chainCursor.All(context.TODO(), &chainResults); err != nil {
-		err = errors.WithMessage(err, "cursor处理错误,chainList")
+		err = errors.WithMessage(err, "cursor processing error ,chainList")
 		return
 	}
 	for _, result := range chainResults {
@@ -67,7 +67,7 @@ func DoRefreshSpot() (err error) {
 		stdSymbol := fmt.Sprintf("%s/USDT", result.TokenName)
 		readyList[stdSymbol] = true
 		stdSymbolList = append(stdSymbolList, stdSymbol)
-		logger.MainMessage.Warnf("增加ChainList中的币对%s", stdSymbol)
+		logger.MainMessage.Warnf("adding currency pair to ChainList %s", stdSymbol)
 	}
 
 	matchFilter := bson.M{"$match": bson.M{"coinType": "coin"}}
@@ -85,11 +85,11 @@ func DoRefreshSpot() (err error) {
 		},
 	})
 	if err != nil {
-		log.Println(errors.WithMessage(err, "执行Aggregate 发生了错误."))
+		log.Println(errors.WithMessage(err, "an error occurred while executing Aggregate."))
 		return
 	}
 	if err = cursor.All(context.TODO(), &results); err != nil {
-		err = errors.WithMessage(err, "cursor处理错误")
+		err = errors.WithMessage(err, "cursor processing error")
 		return
 	}
 	for _, result := range results {
@@ -97,16 +97,16 @@ func DoRefreshSpot() (err error) {
 	}
 	for _, v := range results {
 		stdSymbol := fmt.Sprintf("%s/USDT", v.MarketName)
-		logger.MainMessage.Warnf("添加 Aggregate Stdsymbol %s", stdSymbol)
+		logger.MainMessage.Warnf("add Aggregate Stdsymbol %s", stdSymbol)
 		_, exist := readyList[stdSymbol]
 		if exist {
-			logger.MainMessage.Warnf("已经存在的币对 [%s] 跳过", stdSymbol)
+			logger.MainMessage.Warnf("existing currency pair [%s] skip", stdSymbol)
 			continue
 		}
 		stdSymbolList = append(stdSymbolList, stdSymbol)
 	}
 
-	logger.MainMessage.Warn("开始刷新现货币对列表", stdSymbolList)
+	logger.MainMessage.Warn("starting to refresh spot currency pair list", stdSymbolList)
 	marketCenter.GetSpotIns().SetUsedSymbol(stdSymbolList)
 	marketCenter.GetSpotIns().RefreshMarket()
 	return

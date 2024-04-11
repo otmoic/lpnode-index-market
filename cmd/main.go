@@ -19,49 +19,48 @@ import (
 	"time"
 )
 
-// @todo 这里可以根据参数来选择启动的市场再设置币对，规避单机处理性能问题
 func main() {
 	log.Printf("init...")
 	database_config.Init()
 	database.InitConnect("main", nil)
 
 	marketCenter := &market.MarketCenter{}
-	// 启动 stateDb的处理
+
 	dCtx, dCancel := context.WithCancel(context.Background())
 	go func() {
 		err := state.GetStateDbInstance().Init(dCtx)
 		if err != nil {
-			logger.MainMessage.Errorf("启动数据库发生了错误:%s", err)
+			logger.MainMessage.Errorf("error starting database:%s", err)
 		}
 	}()
-	// 初始化现货的行情
+	// initializing spot market data
 	spotCtx, spotCancel := context.WithCancel(context.Background())
 	marketCenter.InitSpot(spotCtx, spotCancel)
-	// 初始化U本位行情
+	//  initializing u-based market data
 	uSwapCtx, uSwapCancel := context.WithCancel(context.Background())
 	marketCenter.InitUsdtSwap(uSwapCtx, uSwapCancel)
-	//初始化币本位行情
+	// initializing co-based market data
 	cSwapCtx, cSwapCancel := context.WithCancel(context.Background())
 	marketCenter.InitCoinSwap(cSwapCtx, cSwapCancel)
-	// 资金费率
+	// funding rate
 	uSwapFundingRateCtx, uSwapFundingRateCancel := context.WithCancel(context.Background())
 	marketCenter.InitFundingRate(uSwapFundingRateCtx, uSwapFundingRateCancel)
 
 	statusReport := statusreport.NewStatusReport()
-	statusReport.UpdateStatus()          // 定时收集到内存中
-	go statusReport.IntervalReport()     // 定时存储
-	go redisbus.GetRedisBus().SubEvent() // 订阅系统事件
+	statusReport.UpdateStatus()          // collecting periodically into memory
+	go statusReport.IntervalReport()     // periodically storing
+	go redisbus.GetRedisBus().SubEvent() // subscribing to system events
 
-	go marketrefresh.RefreshSpot() // 处理系统事件
-	go func() {                    // 初始化时，订阅数据库中所有的币对行情
-		time.Sleep(time.Second * 5) // 启动后，先订阅所有的现货行情
-		logger.MainMessage.Warn("初始化加载币对")
+	go marketrefresh.RefreshSpot() // processing system events
+	go func() {                    // upon initialization, subscribe to all currency pair market data in the database
+		time.Sleep(time.Second * 5) // after startup, initially subscribe to all spot market data
+		logger.MainMessage.Warn("initialize loading of currency pairs")
 		redisbus.GetRedisBus().EventList <- &redisbus.LPSystemNoticeEventItem{Str: `{"type":"systemInit","payload":"{}"}`}
 	}()
 	// time.Sleep(time.Second * 100 * 100)
-	// 用于启动http服务器
+	// used to start http server
 	go func() {
-		httpd.GetHttpdInstance().Init() // 调用httpd 并初始化
+		httpd.GetHttpdInstance().Init() // invoke httpd and initialize
 	}()
 	go func() {
 		for {
@@ -70,19 +69,19 @@ func main() {
 		}
 	}()
 
-	// 开始监听操作系统信号，程序不退出
+	// begin listening for operating system signals, program does not exit
 	sysMonit := make(chan os.Signal, 100)
 	signal.Notify(sysMonit, syscall.SIGINT, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
 
 	sig := <-sysMonit
-	dCancel()     // 通知数据库模块
-	spotCancel()  // 通知现货模块
-	uSwapCancel() // 通知u本位合约
-	cSwapCancel() // 通知币本位模块
+	dCancel()     // notify database module
+	spotCancel()  // notify spot module
+	uSwapCancel() // notify u-based contract module
+	cSwapCancel() // notify coin-margined contract module
 	uSwapFundingRateCancel()
-	logger.MainMessage.Logger.Debug("准备退出系统....")
-	time.Sleep(time.Second * 2) //等协程退出
-	log.Println("程序已经正常退出.......", sig)
+	logger.MainMessage.Logger.Debug("preparing to exit system...")
+	time.Sleep(time.Second * 2) // wait for goroutines to exit
+	log.Println("program has exited normally......", sig)
 	os.Exit(0)
 
 }
